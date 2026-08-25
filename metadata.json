@@ -1,0 +1,6 @@
+{
+  "name": "Algonquian Real Estate",
+  "description": "Enterprise software portfolio and management platform for Algonquian Real Estate LLC, featuring proprietary ARE Tech applications: Deal Intake, Pipeline CRM, MAO Engine, Offer Generator, Funding Tracker, Buyer Portal, and Admin Command Center.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
