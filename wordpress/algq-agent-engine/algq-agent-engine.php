@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'ALGQ_AGENT_ENGINE_VERSION', '0.1.0' );
+define( 'ALGQ_AGENT_ENGINE_STATUS', 'Ready' );
+define( 'ALGQ_AGENT_ENGINE_APP_URL', 'https://algonquianrealestate.ai.studio' );
 define( 'ALGQ_AGENT_ENGINE_FILE', __FILE__ );
 define( 'ALGQ_AGENT_ENGINE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ALGQ_AGENT_ENGINE_URL', plugin_dir_url( __FILE__ ) );
@@ -49,6 +51,15 @@ final class ALGQ_Agent_Engine {
         ALGQ_Agent_Engine_Admin::get_instance();
 
         do_action( 'algq_agent_engine_ready', ALGQ_AGENT_ENGINE_VERSION );
+    }
+
+    public static function gemini_api_key_configured(): bool {
+        if ( defined( 'ALGQ_GEMINI_API_KEY' ) && '' !== trim( (string) ALGQ_GEMINI_API_KEY ) ) {
+            return true;
+        }
+
+        $environment_key = getenv( 'GEMINI_API_KEY' );
+        return is_string( $environment_key ) && '' !== trim( $environment_key );
     }
 
     public static function activate(): void {
