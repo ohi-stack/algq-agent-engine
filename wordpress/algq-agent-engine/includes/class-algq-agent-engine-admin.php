@@ -49,6 +49,7 @@ final class ALGQ_Agent_Engine_Admin {
         $agents = ALGQ_Agent_Registry::get_instance()->all();
         $runs = ALGQ_Agent_Run_Repository::get_instance()->recent_runs( 25 );
         $approvals = ALGQ_Approval_Gate::pending( 25 );
+        $gemini_configured = ALGQ_Agent_Engine::gemini_api_key_configured();
         ?>
         <div class="wrap algq-agent-engine">
             <div class="algq-hero">
@@ -65,10 +66,37 @@ final class ALGQ_Agent_Engine_Admin {
             <?php endif; ?>
 
             <div class="algq-grid algq-kpis">
+                <div class="algq-card"><span>STATUS</span><strong><?php echo esc_html( ALGQ_AGENT_ENGINE_STATUS ); ?></strong></div>
                 <div class="algq-card"><span>REGISTERED AGENTS</span><strong><?php echo esc_html( count( $agents ) ); ?></strong></div>
                 <div class="algq-card"><span>PENDING APPROVALS</span><strong><?php echo esc_html( count( $approvals ) ); ?></strong></div>
-                <div class="algq-card"><span>RECENT RUNS</span><strong><?php echo esc_html( count( $runs ) ); ?></strong></div>
                 <div class="algq-card"><span>CANONICAL DEAL AUTHORITY</span><strong>Pipeline CRM</strong></div>
+            </div>
+
+            <div class="algq-panel">
+                <h2>Deployment &amp; Gemini API</h2>
+                <table class="widefat striped">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Status</th>
+                            <td><span class="algq-pill"><?php echo esc_html( ALGQ_AGENT_ENGINE_STATUS ); ?></span></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">App URL</th>
+                            <td><a href="<?php echo esc_url( ALGQ_AGENT_ENGINE_APP_URL ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( ALGQ_AGENT_ENGINE_APP_URL ); ?></a></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Gemini API</th>
+                            <td>API Key</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">API Key Status</th>
+                            <td>
+                                <span class="algq-pill"><?php echo esc_html( $gemini_configured ? 'CONFIGURED' : 'ACTION REQUIRED' ); ?></span>
+                                <p class="description">The secret is never stored in this repository. Configure <code>ALGQ_GEMINI_API_KEY</code> in <code>wp-config.php</code> or provide the <code>GEMINI_API_KEY</code> environment variable.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             <div class="algq-panel">
