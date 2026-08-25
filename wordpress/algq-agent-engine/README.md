@@ -6,6 +6,26 @@ WordPress orchestration layer for the Algonquian Real Estate operational agent s
 
 0.1.0
 
+## Deployment status
+
+- **Status:** Ready
+- **App URL:** https://algonquianrealestate.ai.studio
+- **Gemini API:** API Key
+
+The Gemini API secret must not be committed to this repository. Configure it through either:
+
+```php
+define( 'ALGQ_GEMINI_API_KEY', 'your-secret-key' );
+```
+
+in `wp-config.php`, or provide the server environment variable:
+
+```text
+GEMINI_API_KEY=your-secret-key
+```
+
+The ARE Agent Engine admin workstation reports whether a Gemini API key is configured without displaying the secret.
+
 ## Authority boundary
 
 The Agent Engine coordinates work around a canonical `deal_id`; it does not own or duplicate authoritative business records.
@@ -84,8 +104,8 @@ Administrators receive both capabilities on activation.
 
 ## Admin UI
 
-WordPress Admin -> ARE Agent Engine provides the registered agent roster, approval queue, and recent run history using the ARE navy/gold/teal enterprise palette.
+WordPress Admin -> ARE Agent Engine provides the registered agent roster, deployment status, App URL, Gemini API configuration state, approval queue, and recent run history using the ARE navy/gold/teal enterprise palette.
 
 ## Production status
 
-This v0.1.0 package is a foundation release. Before live certification, test activation/migrations, canonical Pipeline CRM deal resolution, service adapters, state-policy enforcement, idempotent replay, approval decisions, audit persistence, and at least one full Intake -> Qualification -> Underwriting workflow on staging.
+This v0.1.0 package is a foundation release. Before live certification, test activation/migrations, canonical Pipeline CRM deal resolution, service adapters, state-policy enforcement, idempotent replay, approval decisions, audit persistence, Gemini API configuration, and at least one full Intake -> Qualification -> Underwriting workflow on staging.
