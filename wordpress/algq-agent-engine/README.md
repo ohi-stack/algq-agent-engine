@@ -102,10 +102,37 @@ If no adapter exists, the engine returns a controlled `WP_Error`; it does not si
 
 Administrators receive both capabilities on activation.
 
+## ARE branded application UI
+
+The Agent Engine adopts the platform-wide **ARE Branded Plugin UI Standard** as a mandatory release requirement.
+
+The controlling rule is:
+
+> **Centralize the design system; specialize the workflow.**
+
+The WordPress workstation now uses the shared `are-*` component namespace for the application shell, navigation, KPI cards, tables, buttons, badges, alerts, responsive states, and legitimate empty states while retaining `algq-*` identifiers for WordPress/PHP implementation compatibility.
+
+The UI must never invent operational metrics. Visible counts and status widgets must come from registered agents, persistent approval records, persistent AgentRun records, authoritative platform services, or other real system data. Otherwise the interface must show an explicit empty/loading/failure state or omit the widget.
+
+See [`docs/ARE-UI-STANDARD.md`](docs/ARE-UI-STANDARD.md) for the complete Agent Engine UI contract, accessibility requirements, responsive rules, component vocabulary, and production acceptance gate.
+
 ## Admin UI
 
-WordPress Admin -> ARE Agent Engine provides the registered agent roster, deployment status, App URL, Gemini API configuration state, approval queue, and recent run history using the ARE navy/gold/teal enterprise palette.
+WordPress Admin -> ARE Agent Engine provides:
+
+- ARE application header and local navigation;
+- truthful KPI/status widgets;
+- 14-agent registry;
+- human approval queue;
+- recent persistent AgentRun history;
+- deployment status;
+- App URL;
+- Gemini API configuration state;
+- responsive table/card behavior;
+- explicit empty and failure states.
+
+The application uses the ARE navy/gold/teal enterprise palette and preserves WordPress capabilities, nonces, sanitization, escaping, and lifecycle conventions.
 
 ## Production status
 
-This v0.1.0 package is a foundation release. Before live certification, test activation/migrations, canonical Pipeline CRM deal resolution, service adapters, state-policy enforcement, idempotent replay, approval decisions, audit persistence, Gemini API configuration, and at least one full Intake -> Qualification -> Underwriting workflow on staging.
+This v0.1.0 package is a foundation release. Before live certification, test activation/migrations, canonical Pipeline CRM deal resolution, service adapters, state-policy enforcement, idempotent replay, approval decisions, audit persistence, Gemini API configuration, ARE UI compliance/accessibility/responsive behavior, and at least one full Intake -> Qualification -> Underwriting workflow on staging.
