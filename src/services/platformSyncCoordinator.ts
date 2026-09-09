@@ -1,15 +1,9 @@
 /**
  * ARE cross-surface synchronization coordinator.
  *
- * Existing UI components still use local React/localStorage state. This
- * coordinator turns that local state into a synchronized client cache:
- * - canonical snapshot is pulled before React mounts;
- * - user changes are diffed and routed to authoritative ARE services;
- * - remote revisions refresh the cache and notify mounted surfaces;
- * - website/wp-admin mounts can reload safely when canonical state changes.
- *
- * No outbound domain mutation is attempted until a live platform snapshot has
- * been resolved. This prevents demo/seed records from being written to live ARE.
+ * Existing UI sections still use React/localStorage working state. This module
+ * turns that storage into a transitional client cache backed by authoritative
+ * ARE services until each section moves to direct query/mutation hooks.
  */
 
 import type { AutomationTrigger, FundingSource, RealEstateDeal } from "../types";
@@ -19,6 +13,7 @@ import {
   getAREPlatformRuntimeConfig,
   publishAREEvent,
   toCanonicalDealState,
+  type AREInjectedRuntimeConfig,
   type AREPlatformSnapshot,
 } from "./arePlatformClient";
 
@@ -118,9 +113,7 @@ function applySnapshotToCache(snapshot: AREPlatformSnapshot) {
     localStorage.setItem(STORAGE_KEYS.deals, JSON.stringify(snapshot.deals));
     localStorage.setItem(STORAGE_KEYS.funds, JSON.stringify(snapshot.funds));
     localStorage.setItem(STORAGE_KEYS.triggers, JSON.stringify(snapshot.triggers));
-    if (snapshot.automationLogs) {
-      localStorage.setItem(STORAGE_KEYS.logs, JSON.stringify(snapshot.automationLogs));
-    }
+    if (snapshot.automationLogs) localStorage.setItem(STORAGE_KEYS.logs, JSON.stringify(snapshot.automationLogs));
     lastObservedCache = readCache();
     lastRemoteHash = snapshotHash(snapshot);
     writeSyncMeta({
@@ -170,7 +163,6 @@ async function syncDeals(previous: RealEstateDeal[], current: RealEstateDeal[]) 
       });
       continue;
     }
-
     if (old.status !== deal.status) {
       await callAREPlatformService({
         service: "pipeline.deals",
@@ -182,9 +174,8 @@ async function syncDeals(previous: RealEstateDeal[], current: RealEstateDeal[]) 
         },
       });
     }
-
     const patch = dealPatch(old, deal);
-    if (Object.keys(patch).length > 0) {
+    if (Object.keys(patch).length) {
       await callAREPlatformService({
         service: "pipeline.deals",
         action: "update",
@@ -212,20 +203,12 @@ async function syncFunds(previous: FundingSource[], current: FundingSource[]) {
   for (const fund of current) {
     const old = before.get(fund.id);
     if (!old || stableStringify(old) !== stableStringify(fund)) {
-      await callAREPlatformService({
-        service: "funding.sources",
-        action: "upsert",
-        payload: { source: fund },
-      });
+      await callAREPlatformService({ service: "funding.sources", action: "upsert", payload: { source: fund } });
     }
   }
   for (const fund of previous) {
     if (!after.has(fund.id)) {
-      await callAREPlatformService({
-        service: "funding.sources",
-        action: "deactivate",
-        payload: { source_id: fund.id },
-      });
+      await callAREPlatformService({ service: "funding.sources", action: "deactivate", payload: { source_id: fund.id } });
     }
   }
 }
@@ -236,29 +219,20 @@ async function syncTriggers(previous: AutomationTrigger[], current: AutomationTr
   for (const trigger of current) {
     const old = before.get(trigger.id);
     if (!old || stableStringify(old) !== stableStringify(trigger)) {
-      await callAREPlatformService({
-        service: "automation.rules",
-        action: "upsert",
-        payload: { rule: trigger },
-      });
+      await callAREPlatformService({ service: "automation.rules", action: "upsert", payload: { rule: trigger } });
     }
   }
   for (const trigger of previous) {
     if (!after.has(trigger.id)) {
-      await callAREPlatformService({
-        service: "automation.rules",
-        action: "disable",
-        payload: { rule_id: trigger.id },
-      });
+      await callAREPlatformService({ service: "automation.rules", action: "disable", payload: { rule_id: trigger.id } });
     }
   }
 }
 
 async function syncLogs(previous: string[], current: string[]) {
-  if (current.length === 0 || stableStringify(previous) === stableStringify(current)) return;
+  if (!current.length || stableStringify(previous) === stableStringify(current)) return;
   const previousSet = new Set(previous);
-  const additions = current.filter(line => !previousSet.has(line)).slice(0, 10);
-  for (const line of additions) {
+  for (const line of current.filter(item => !previousSet.has(item)).slice(0, 10)) {
     await publishAREEvent("agent_engine.client_activity", { message: line });
   }
 }
@@ -288,6 +262,30 @@ function hasActiveEditor(): boolean {
   return tag === "input" || tag === "textarea" || tag === "select" || (element as HTMLElement).isContentEditable;
 }
 
+function trustedAREOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== "https:" && url.hostname !== "localhost") return false;
+    return (
+      url.hostname === "algonquianrealestate.com" ||
+      url.hostname.endsWith(".algonquianrealestate.com") ||
+      url.hostname === window.location.hostname
+    );
+  } catch {
+    return false;
+  }
+}
+
+function parentOrigin(): string | null {
+  if (!document.referrer) return null;
+  try {
+    const origin = new URL(document.referrer).origin;
+    return trustedAREOrigin(origin) ? origin : null;
+  } catch {
+    return null;
+  }
+}
+
 async function pullRemoteSnapshot({ allowReload = true } = {}) {
   const snapshot = await fetchAREPlatformSnapshot();
   if (!snapshot) {
@@ -299,26 +297,18 @@ async function pullRemoteSnapshot({ allowReload = true } = {}) {
   const changed = Boolean(lastRemoteHash && incomingHash !== lastRemoteHash);
   applySnapshotToCache(snapshot);
   liveSnapshotResolved = true;
-
   window.dispatchEvent(new CustomEvent("are:sync:snapshot", { detail: snapshot }));
 
-  const config = getAREPlatformRuntimeConfig();
   const shouldReload = (import.meta.env.VITE_ARE_RELOAD_ON_REMOTE_CHANGE || "true") !== "false";
   if (changed && allowReload && shouldReload && !hasActiveEditor()) {
-    // Existing App sections own local React state. A controlled refresh makes the
-    // new canonical snapshot visible on all three surfaces without maintaining a
-    // second competing client data store.
     window.setTimeout(() => window.location.reload(), 250);
   }
 
-  if (config.surface !== "agent_app" && window.parent && window.parent !== window) {
+  const origin = parentOrigin();
+  if (origin && window.parent && window.parent !== window) {
     window.parent.postMessage(
-      {
-        type: "ARE_AGENT_ENGINE_SYNCED",
-        revision: snapshot.revision,
-        source: snapshot.source,
-      },
-      window.location.origin,
+      { type: "ARE_AGENT_ENGINE_SYNCED", revision: snapshot.revision, source: snapshot.source },
+      origin,
     );
   }
 }
@@ -345,9 +335,7 @@ function startRemotePoller() {
 
 function installPluginMessageBridge() {
   window.addEventListener("message", event => {
-    // Only accept same-origin messages. Cross-origin WordPress/app communication
-    // should use the canonical API gateway instead of trusting arbitrary frames.
-    if (event.origin !== window.location.origin || !event.data || typeof event.data !== "object") return;
+    if (!trustedAREOrigin(event.origin) || !event.data || typeof event.data !== "object") return;
     const message = event.data as Record<string, unknown>;
     if (message.type === "ARE_AGENT_ENGINE_INVALIDATE") {
       void pullRemoteSnapshot({ allowReload: true });
@@ -355,7 +343,7 @@ function installPluginMessageBridge() {
     if (message.type === "ARE_AGENT_ENGINE_CONFIG" && message.config && typeof message.config === "object") {
       window.ARE_AGENT_ENGINE_CONFIG = {
         ...(window.ARE_AGENT_ENGINE_CONFIG || {}),
-        ...(message.config as Record<string, unknown>),
+        ...(message.config as AREInjectedRuntimeConfig),
       };
       void pullRemoteSnapshot({ allowReload: false });
     }
@@ -387,7 +375,6 @@ export async function bootstrapAREPlatformSync(): Promise<{ connected: boolean; 
   liveSnapshotResolved = true;
   startMutationScanner();
   startRemotePoller();
-
   return { connected: true, source: snapshot.source || "platform" };
 }
 
