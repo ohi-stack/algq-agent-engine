@@ -37,32 +37,32 @@ export function AdminCenterSection({ deals, funds }: AdminCenterProps) {
     <div className="space-y-8 animate-fade-in" id="admin-module">
       {/* HUD metrics row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4" id="admin-kpis-grid">
-        <div className="bg-slate-900 text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-16 w-16 bg-amber-500/5 rounded-full blur-xl" />
-          <span className="text-[10px] uppercase font-mono tracking-wider text-amber-400 block mb-1">AGGREGATE PORTFOLIO LIQUIDITY</span>
-          <span className="text-2xl font-mono font-bold block">${activePipelineVolume.toLocaleString()}</span>
-          <span className="text-[9px] text-slate-400 block mt-1">Across {totalDealsCount} pipeline listings</span>
+        <div className="bg-[#0E192D] text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-16 w-16 bg-[#D1A54A]/5 rounded-full blur-xl" />
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#D1A54A] block mb-1">AGGREGATE PORTFOLIO LIQUIDITY</span>
+          <span className="text-2xl font-mono font-bold block text-white">${activePipelineVolume.toLocaleString()}</span>
+          <span className="text-[9px] text-[#5E6B78] block mt-1">Across {totalDealsCount} pipeline listings</span>
         </div>
 
-        <div className="bg-slate-900 text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-16 w-16 bg-emerald-500/5 rounded-full blur-xl" />
-          <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 block mb-1">TOTAL CLOSED TRANSACTIONS</span>
-          <span className="text-2xl font-mono font-bold block">${closedDealsVolume.toLocaleString()}</span>
-          <span className="text-[9px] text-slate-400 block mt-1">Successfully capitalized</span>
+        <div className="bg-[#0E192D] text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-16 w-16 bg-[#36C2B4]/5 rounded-full blur-xl" />
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#36C2B4] block mb-1">TOTAL CLOSED TRANSACTIONS</span>
+          <span className="text-2xl font-mono font-bold block text-white">${closedDealsVolume.toLocaleString()}</span>
+          <span className="text-[9px] text-[#5E6B78] block mt-1">Successfully capitalized</span>
         </div>
 
-        <div className="bg-slate-900 text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-16 w-16 bg-blue-500/5 rounded-full blur-xl" />
-          <span className="text-[10px] uppercase font-mono tracking-wider text-indigo-400 block mb-1">AVERAGE ACQUISITION SAVINGS</span>
-          <span className="text-2xl font-mono font-bold block">{avgDiscount}% Under ARV</span>
-          <span className="text-[9px] text-slate-400 block mt-1">Sponsor target average {avgDiscount > 30 ? "✓ Met" : "Vetting"}</span>
+        <div className="bg-[#0E192D] text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-16 w-16 bg-[#D1A54A]/5 rounded-full blur-xl" />
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#D1A54A] block mb-1">AVERAGE ACQUISITION SAVINGS</span>
+          <span className="text-2xl font-mono font-bold block text-white">{avgDiscount}% Under ARV</span>
+          <span className="text-[9px] text-[#5E6B78] block mt-1">Sponsor target average {avgDiscount > 30 ? <span className="text-[#36C2B4]">✓ Met</span> : "Vetting"}</span>
         </div>
 
-        <div className="bg-slate-900 text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-16 w-16 bg-cyan-500/5 rounded-full blur-xl" />
-          <span className="text-[10px] uppercase font-mono tracking-wider text-cyan-400 block mb-1">ACTIVE CAPITAL STACK</span>
-          <span className="text-2xl font-mono font-bold block">${fundedJVsSum.toLocaleString()}</span>
-          <span className="text-[9px] text-slate-400 block mt-1">Lent or joint-venture partners</span>
+        <div className="bg-[#0E192D] text-white p-5 rounded-xl border border-slate-800 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-16 w-16 bg-[#36C2B4]/5 rounded-full blur-xl" />
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#36C2B4] block mb-1">ACTIVE CAPITAL STACK</span>
+          <span className="text-2xl font-mono font-bold block text-white">${fundedJVsSum.toLocaleString()}</span>
+          <span className="text-[9px] text-[#5E6B78] block mt-1">Lent or joint-venture partners</span>
         </div>
       </div>
 
