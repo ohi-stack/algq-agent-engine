@@ -80,24 +80,65 @@ export default function App() {
     localStorage.setItem("algonquian_logs", JSON.stringify(automationLogs));
   }, [automationLogs]);
 
-  // Central Event Log trigger triggers
-  const triggerSystemEvent = (eventName: string, details: any) => {
-    const timestamp = new Date().toLocaleTimeString();
+  // Central Event Log trigger triggers with Idempotency Guard
+  const triggerSystemEvent = (eventName: string, details: any = {}) => {
+    // 1. Resolve Deal ID (from details.dealId, details.id, or matched address)
+    const resolvedDealId: string | undefined = 
+      details?.dealId || 
+      details?.id || 
+      (details?.address && deals.find(d => d.address === details.address)?.id) ||
+      (details?.dealAddress && deals.find(d => d.address === details.dealAddress)?.id);
+
+    // 2. Idempotency Check: Verify against current automationLogs
+    // Before logging or triggering side effects like Google Tasks or email alerts,
+    // verify against current automationLogs to prevent duplicate execution of the same event for a given deal ID.
+    if (resolvedDealId) {
+      const idempotencyKey = `[IDEMPOTENCY:${eventName}:${resolvedDealId}]`;
+      
+      const isDuplicate = automationLogs.some(log => {
+        if (log.includes(idempotencyKey)) return true;
+        
+        // Also check signature patterns for historical logs
+        if (eventName === "ON_STATUS_CHANGE" && details.newStatus && details.address) {
+          return log.includes(`[CRM Pipeline Swing] Property "${details.address}" moved -> "${details.newStatus}"`);
+        }
+        if (eventName === "ON_DEAL_INTAKE" && details.address) {
+          return log.includes(`[Deal Intake Hook] Sourced off-market lead "${details.address}"`);
+        }
+        if (eventName === "ON_OFFER_SUBMITTED" && details.address) {
+          return log.includes(`[Signature Engine] Digital e-signature verified!`) && log.includes(details.address);
+        }
+        if (eventName === "ON_STAGE_TASK_LIST_CREATED" && details.dealAddress) {
+          return log.includes(`[Google Tasks Sync] Authorized new linked checklist`) && log.includes(details.dealAddress);
+        }
+        if (eventName === "ON_DEAL_TASKS_SYNCED" && details.address) {
+          return log.includes(`[Google Tasks Sync] Synchronized`) && log.includes(details.address);
+        }
+        return false;
+      });
+
+      if (isDuplicate) {
+        console.warn(`[Idempotency Guard] Duplicate execution suppressed: event "${eventName}" for deal ID "${resolvedDealId}" has already been processed.`);
+        return;
+      }
+    }
+
+    // 3. Execution of Event Logic and Side Effects
     let message = `[Event Raised] ${eventName}`;
+    const sideEffectLogs: string[] = [];
 
     if (eventName === "ON_DEAL_INTAKE") {
-      message = `[Deal Intake Hook] Sourced off-market lead "${details.address}" (${details.city}, CT). Computed MAO is $${details.mao.toLocaleString()}. Added to Pipeline.`;
+      message = `[Deal Intake Hook] Sourced off-market lead "${details.address}" (${details.city}, CT). Computed MAO is $${details.mao?.toLocaleString() || "0"}. Added to Pipeline.`;
       
       // Trigger correlated automations
       triggers.filter(t => t.event === "ON_DEAL_INTAKE" && t.isActive).forEach(t => {
-        setAutomationLogs(prev => [
-          ...prev, 
-          `[Webhook Executed] SMS Alert successfully dispatched to ${t.recipient} : "New Deal Lead at ${details.address}. Asking: $${details.askingPrice.toLocaleString()}."`
-        ]);
+        sideEffectLogs.push(
+          `[Webhook Executed] SMS Alert successfully dispatched to ${t.recipient} : "New Deal Lead at ${details.address}. Asking: $${details.askingPrice?.toLocaleString() || "0"}."`
+        );
       });
     } 
     else if (eventName === "ON_OFFER_SUBMITTED") {
-      message = `[Signature Engine] Digital e-signature verified! Signatory "${details.signatory}" authorized "${details.documentType}" document.`;
+      message = `[Signature Engine] Digital e-signature verified! Signatory "${details.signatory}" authorized "${details.documentType}" document for ${details.address || "deal"}.`;
     }
     else if (eventName === "ON_STATUS_CHANGE") {
       message = `[CRM Pipeline Swing] Property "${details.address}" moved -> "${details.newStatus}".`;
@@ -105,35 +146,40 @@ export default function App() {
       // Check for Underwriting Automation
       if (details.newStatus === DealStatus.Underwriting) {
         triggers.filter(t => t.event === "ON_STATUS_CHANGE_UNDERWRITING" && t.isActive).forEach(t => {
-          setAutomationLogs(prev => [
-            ...prev,
+          sideEffectLogs.push(
             `[Webhook Executed] Document compilation queued: LOI draft generated for ${details.address}, Owner: ${details.ownerName || "Seller"}.`
-          ]);
+          );
         });
       }
       // Check for Offer Submitted
       if (details.newStatus === DealStatus.OfferSubmitted) {
         triggers.filter(t => t.event === "ON_OFFER_SUBMITTED" && t.isActive).forEach(t => {
-          setAutomationLogs(prev => [
-            ...prev,
+          sideEffectLogs.push(
             `[Webhook Executed] Partner Alert: Email dispatched to ${t.recipient} with underwriting parameters for ${details.address}.`
-          ]);
+          );
         });
       }
     }
     else if (eventName === "ON_STAGE_TASK_LIST_CREATED") {
       message = `[Google Tasks Sync] Authorized new linked checklist "${details.listTitle}" (${details.tasksCount} tasks) for ${details.dealAddress}.`;
-      setDeals(prev => prev.map(d => d.address === details.dealAddress || d.id === details.dealId ? { ...d, hasLinkedGoogleTaskList: true } : d));
+      setDeals(prev => prev.map(d => d.address === details.dealAddress || d.id === (details.dealId || resolvedDealId) ? { ...d, hasLinkedGoogleTaskList: true } : d));
     }
     else if (eventName === "ON_DEAL_TASKS_SYNCED") {
       message = `[Google Tasks Sync] Synchronized ${details.count} tasks for deal "${details.address}".`;
-      setDeals(prev => prev.map(d => d.address === details.address ? { ...d, hasLinkedGoogleTaskList: true } : d));
+      setDeals(prev => prev.map(d => d.address === details.address || d.id === (details.dealId || resolvedDealId) ? { ...d, hasLinkedGoogleTaskList: true } : d));
     }
     else if (eventName === "ON_BATCH_INTAKE") {
-      message = `[Batch Ingestion Engine] Batch imported ${details.count} off-market leads into Pipeline CRM (Total asking volume: $${details.totalVolume?.toLocaleString()}).`;
+      message = `[Batch Ingestion Engine] Batch imported ${details.count} off-market leads into Pipeline CRM (Total asking volume: $${details.totalVolume?.toLocaleString() || "0"}).`;
+    }
+    else if (eventName === "ON_AGENT_APPROVAL_GRANTED") {
+      message = `[Agent Approval Gate] Executed authorized ticket #${details.ticketId} on ${details.dealAddress || "deal"}.`;
     }
 
-    setAutomationLogs(prev => [message, ...prev]);
+    const primaryLogWithToken = resolvedDealId 
+      ? `${message} [IDEMPOTENCY:${eventName}:${resolvedDealId}]`
+      : message;
+
+    setAutomationLogs(prev => [primaryLogWithToken, ...sideEffectLogs, ...prev]);
   };
 
   // State Adjustments
@@ -152,7 +198,7 @@ export default function App() {
     if (!deal) return;
     
     setDeals(prev => prev.map(d => d.id === id ? { ...d, status: newStatus, updatedAt: new Date().toISOString() } : d));
-    triggerSystemEvent("ON_STATUS_CHANGE", { address: deal.address, newStatus, ownerName: deal.ownerName });
+    triggerSystemEvent("ON_STATUS_CHANGE", { dealId: deal.id, address: deal.address, newStatus, ownerName: deal.ownerName });
   };
 
   const handleUpdateDealDetails = (id: string, updatedFields: Partial<RealEstateDeal>) => {
@@ -423,7 +469,7 @@ export default function App() {
                     <span className="text-[#F5D77F] font-bold">ARE Agent Engine</span>
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-[#D1A54A] text-[#071522] text-[9px] font-mono font-bold">
-                    v2.5
+                    1.0.0
                   </span>
                 </button>
 

@@ -81,6 +81,7 @@ export function OfferGeneratorSection({ deals, triggerSystemEvent }: OfferGenera
     setSigned(true);
     const deal = deals.find(d => d.id === selectedDealId);
     triggerSystemEvent("ON_OFFER_SUBMITTED", {
+      dealId: deal?.id,
       address: deal?.address,
       signatory: eSignature,
       documentType: SEED_TEMPLATES.find(t => t.id === selectedTemplateId)?.title

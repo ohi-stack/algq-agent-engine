@@ -579,6 +579,7 @@ export const GoogleTasksSection: React.FC<GoogleTasksSectionProps> = ({
 
       if (triggerSystemEvent) {
         triggerSystemEvent("ON_STAGE_TASK_LIST_CREATED", {
+          dealId: targetDeal.id,
           stage: stageConfig.stage,
           dealAddress: targetDeal.address,
           listTitle: result.taskList.title,
@@ -696,6 +697,7 @@ export const GoogleTasksSection: React.FC<GoogleTasksSectionProps> = ({
 
       if (triggerSystemEvent) {
         triggerSystemEvent("ON_DEAL_TASKS_SYNCED", {
+          dealId: deal.id,
           address: deal.address,
           count: createdCount,
         });

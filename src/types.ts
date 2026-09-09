@@ -157,6 +157,15 @@ export interface SkillParameterSchema {
   description: string;
 }
 
+export type AgentPermission = 
+  | "read:pipeline" 
+  | "write:underwriting" 
+  | "write:contracts" 
+  | "manage:capital" 
+  | "sync:google_tasks" 
+  | "execute:escrow" 
+  | "admin:override";
+
 export interface SkillDefinition {
   id: string;
   name: string;
@@ -169,6 +178,11 @@ export interface SkillDefinition {
   idempotencyTtlSeconds: number;
   riskLevel: "Low" | "Medium" | "High" | "Critical";
   estimatedRunTimeMs: number;
+  requiredPermissions?: AgentPermission[];
+  retryPolicy?: {
+    maxRetries: number;
+    backoffMs: number;
+  };
 }
 
 export interface AgentDefinition {
@@ -180,6 +194,7 @@ export interface AgentDefinition {
   status: "idle" | "active" | "standby" | "paused";
   allowedSkillIds: string[];
   autonomousLevel: AutonomousLevel;
+  permissions?: AgentPermission[];
   badgeColor: string;
   iconName: string;
   totalRunsCount: number;
@@ -207,8 +222,24 @@ export interface AgentRunTraceStep {
   metadata?: Record<string, any>;
 }
 
+export interface ExecutionRequest {
+  id: string;
+  dealId: string;
+  dealAddress: string;
+  agentId: string;
+  skillId: string;
+  inputPayload: Record<string, any>;
+  idempotencyKey: string;
+  operator: string;
+  requestedAt: string;
+  priority: "low" | "normal" | "high" | "urgent";
+  maxRetries: number;
+  simulateFailureMode?: "none" | "transient_timeout" | "permission_denied" | "state_violation" | "schema_error";
+}
+
 export interface AgentRun {
   id: string;
+  executionRequestId?: string;
   correlationId: string;
   idempotencyKey: string;
   dealId: string;
@@ -222,6 +253,14 @@ export interface AgentRun {
   inputPayload: Record<string, any>;
   outputResult?: Record<string, any>;
   errorMessage?: string;
+  attemptCount?: number;
+  maxRetries?: number;
+  retryHistory?: {
+    attempt: number;
+    timestamp: string;
+    error: string;
+    backoffMs: number;
+  }[];
   stateDelta?: {
     previousStatus?: DealStatus;
     newStatus?: DealStatus;
@@ -239,6 +278,7 @@ export interface AgentRun {
 export interface ApprovalTicket {
   id: string;
   runId: string;
+  executionRequestId?: string;
   dealId: string;
   dealAddress: string;
   agentId: string;

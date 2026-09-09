@@ -9,14 +9,16 @@ import {
   AgentRun, 
   ApprovalTicket, 
   AgentAuditEvent, 
-  DealStatus,
-  RealEstateDeal,
-  AgentRunTraceStep
+  DealStatus, 
+  RealEstateDeal, 
+  AgentRunTraceStep,
+  ExecutionRequest,
+  AgentPermission
 } from "../types";
 
-// ==========================================
-// 1. ALGQ AGENT REGISTRY
-// ==========================================
+// =========================================================================
+// 1. ALGQ AGENT REGISTRY (WITH SCOPED PERMISSIONS & AUTONOMY TIERS)
+// =========================================================================
 
 export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
   {
@@ -28,7 +30,8 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
     status: "active",
     allowedSkillIds: ["skill_parse_intake", "skill_enrich_metadata", "skill_verify_ownership"],
     autonomousLevel: "fully_autonomous",
-    badgeColor: "bg-[#0B3A63] text-[#36C2B4]",
+    permissions: ["read:pipeline"],
+    badgeColor: "bg-[#0B1F33] text-[#36C2B4] border border-[#0B3A63]",
     iconName: "FolderKanban",
     totalRunsCount: 142,
     successRatePercent: 99.3,
@@ -43,7 +46,8 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
     status: "active",
     allowedSkillIds: ["skill_calculate_mao", "skill_run_arv_comps", "skill_stress_rehab"],
     autonomousLevel: "fully_autonomous",
-    badgeColor: "bg-[#0B3A63] text-[#D1A54A]",
+    permissions: ["read:pipeline", "write:underwriting"],
+    badgeColor: "bg-[#0B1F33] text-[#D1A54A] border border-[#0B3A63]",
     iconName: "Calculator",
     totalRunsCount: 98,
     successRatePercent: 98.9,
@@ -58,7 +62,8 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
     status: "active",
     allowedSkillIds: ["skill_generate_offer_draft", "skill_release_binding_offer", "skill_seller_finance_terms"],
     autonomousLevel: "strict_approval",
-    badgeColor: "bg-[#7A1E28]/30 text-[#D1A54A] border border-[#D1A54A]/30",
+    permissions: ["read:pipeline", "write:contracts"],
+    badgeColor: "bg-[#0B1F33] text-[#D1A54A] border border-[#D1A54A]/40",
     iconName: "FileSignature",
     totalRunsCount: 64,
     successRatePercent: 96.8,
@@ -73,7 +78,8 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
     status: "active",
     allowedSkillIds: ["skill_match_capital", "skill_commit_capital", "skill_issue_term_sheet"],
     autonomousLevel: "supervised",
-    badgeColor: "bg-[#0B3A63] text-emerald-300",
+    permissions: ["read:pipeline", "manage:capital"],
+    badgeColor: "bg-[#0B1F33] text-[#36C2B4] border border-[#0B3A63]",
     iconName: "Landmark",
     totalRunsCount: 51,
     successRatePercent: 100.0,
@@ -88,7 +94,8 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
     status: "active",
     allowedSkillIds: ["skill_provision_google_tasks", "skill_audit_due_diligence", "skill_escalate_overdue"],
     autonomousLevel: "fully_autonomous",
-    badgeColor: "bg-[#0B3A63] text-[#36C2B4]",
+    permissions: ["read:pipeline", "sync:google_tasks"],
+    badgeColor: "bg-[#0B1F33] text-[#36C2B4] border border-[#0B3A63]",
     iconName: "CheckSquare",
     totalRunsCount: 188,
     successRatePercent: 99.5,
@@ -103,7 +110,8 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
     status: "active",
     allowedSkillIds: ["skill_generate_purchase_contract", "skill_generate_assignment_agreement", "skill_draft_jv_agreement"],
     autonomousLevel: "supervised",
-    badgeColor: "bg-[#0B3A63] text-slate-200",
+    permissions: ["read:pipeline", "write:contracts"],
+    badgeColor: "bg-[#0B1F33] text-slate-200 border border-[#0B3A63]",
     iconName: "BookOpen",
     totalRunsCount: 79,
     successRatePercent: 97.4,
@@ -118,7 +126,8 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
     status: "active",
     allowedSkillIds: ["skill_open_title_escrow", "skill_verify_pof", "skill_issue_closing_instructions"],
     autonomousLevel: "strict_approval",
-    badgeColor: "bg-[#7A1E28]/30 text-amber-300 border border-amber-500/30",
+    permissions: ["read:pipeline", "execute:escrow"],
+    badgeColor: "bg-[#0B1F33] text-[#D1A54A] border border-[#7A1E28]",
     iconName: "ShieldCheck",
     totalRunsCount: 37,
     successRatePercent: 100.0,
@@ -126,9 +135,9 @@ export const ALGQ_AGENT_REGISTRY: AgentDefinition[] = [
   }
 ];
 
-// ==========================================
-// 2. ALGQ SKILL REGISTRY
-// ==========================================
+// =========================================================================
+// 2. ALGQ SKILL REGISTRY (WITH SCHEMAS, RETRIES, AND PERMISSION SCOPES)
+// =========================================================================
 
 export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
   // Intake Skills
@@ -146,7 +155,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 86400,
     riskLevel: "Low",
-    estimatedRunTimeMs: 420
+    estimatedRunTimeMs: 420,
+    requiredPermissions: ["read:pipeline"],
+    retryPolicy: { maxRetries: 3, backoffMs: 250 }
   },
   {
     id: "skill_enrich_metadata",
@@ -161,7 +172,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 43200,
     riskLevel: "Low",
-    estimatedRunTimeMs: 650
+    estimatedRunTimeMs: 650,
+    requiredPermissions: ["read:pipeline"],
+    retryPolicy: { maxRetries: 3, backoffMs: 300 }
   },
   // Underwriting Skills
   {
@@ -179,7 +192,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 3600,
     riskLevel: "Low",
-    estimatedRunTimeMs: 380
+    estimatedRunTimeMs: 380,
+    requiredPermissions: ["write:underwriting"],
+    retryPolicy: { maxRetries: 3, backoffMs: 200 }
   },
   {
     id: "skill_run_arv_comps",
@@ -194,7 +209,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 86400,
     riskLevel: "Low",
-    estimatedRunTimeMs: 780
+    estimatedRunTimeMs: 780,
+    requiredPermissions: ["write:underwriting"],
+    retryPolicy: { maxRetries: 3, backoffMs: 400 }
   },
   // Offer Skills
   {
@@ -211,7 +228,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 7200,
     riskLevel: "Medium",
-    estimatedRunTimeMs: 950
+    estimatedRunTimeMs: 950,
+    requiredPermissions: ["write:contracts"],
+    retryPolicy: { maxRetries: 3, backoffMs: 450 }
   },
   {
     id: "skill_release_binding_offer",
@@ -229,7 +248,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "required",
     idempotencyTtlSeconds: 86400,
     riskLevel: "Critical",
-    estimatedRunTimeMs: 1450
+    estimatedRunTimeMs: 1450,
+    requiredPermissions: ["write:contracts"],
+    retryPolicy: { maxRetries: 2, backoffMs: 600 }
   },
   {
     id: "skill_seller_finance_terms",
@@ -245,7 +266,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 14400,
     riskLevel: "Medium",
-    estimatedRunTimeMs: 820
+    estimatedRunTimeMs: 820,
+    requiredPermissions: ["write:contracts"],
+    retryPolicy: { maxRetries: 3, backoffMs: 350 }
   },
   // Capital Allocation Skills
   {
@@ -261,7 +284,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 14400,
     riskLevel: "Low",
-    estimatedRunTimeMs: 520
+    estimatedRunTimeMs: 520,
+    requiredPermissions: ["manage:capital"],
+    retryPolicy: { maxRetries: 3, backoffMs: 300 }
   },
   {
     id: "skill_commit_capital",
@@ -276,7 +301,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "required",
     riskLevel: "High",
     idempotencyTtlSeconds: 86400,
-    estimatedRunTimeMs: 1100
+    estimatedRunTimeMs: 1100,
+    requiredPermissions: ["manage:capital"],
+    retryPolicy: { maxRetries: 2, backoffMs: 500 }
   },
   // Google Tasks Skills
   {
@@ -292,7 +319,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 3600,
     riskLevel: "Low",
-    estimatedRunTimeMs: 720
+    estimatedRunTimeMs: 720,
+    requiredPermissions: ["sync:google_tasks"],
+    retryPolicy: { maxRetries: 3, backoffMs: 250 }
   },
   {
     id: "skill_audit_due_diligence",
@@ -306,7 +335,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 3600,
     riskLevel: "Low",
-    estimatedRunTimeMs: 460
+    estimatedRunTimeMs: 460,
+    requiredPermissions: ["sync:google_tasks"],
+    retryPolicy: { maxRetries: 3, backoffMs: 200 }
   },
   // Legal & Documents
   {
@@ -322,7 +353,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 7200,
     riskLevel: "Medium",
-    estimatedRunTimeMs: 880
+    estimatedRunTimeMs: 880,
+    requiredPermissions: ["write:contracts"],
+    retryPolicy: { maxRetries: 3, backoffMs: 350 }
   },
   {
     id: "skill_generate_assignment_agreement",
@@ -337,7 +370,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 7200,
     riskLevel: "Medium",
-    estimatedRunTimeMs: 910
+    estimatedRunTimeMs: 910,
+    requiredPermissions: ["write:contracts"],
+    retryPolicy: { maxRetries: 3, backoffMs: 400 }
   },
   // Closing / Escrow
   {
@@ -353,7 +388,9 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "none",
     idempotencyTtlSeconds: 86400,
     riskLevel: "Medium",
-    estimatedRunTimeMs: 640
+    estimatedRunTimeMs: 640,
+    requiredPermissions: ["execute:escrow"],
+    retryPolicy: { maxRetries: 3, backoffMs: 400 }
   },
   {
     id: "skill_issue_closing_instructions",
@@ -368,17 +405,65 @@ export const ALGQ_SKILL_REGISTRY: SkillDefinition[] = [
     approvalPolicy: "required",
     riskLevel: "Critical",
     idempotencyTtlSeconds: 86400,
-    estimatedRunTimeMs: 1800
+    estimatedRunTimeMs: 1800,
+    requiredPermissions: ["execute:escrow"],
+    retryPolicy: { maxRetries: 1, backoffMs: 1000 }
   }
 ];
 
-// ==========================================
-// 3. SEED AUDIT LOGS & RUNS & TICKETS
-// ==========================================
+// =========================================================================
+// 3. IN-MEMORY IDEMPOTENCY ENGINE
+// =========================================================================
+
+interface CachedIdempotencyRecord {
+  timestamp: number;
+  result: ExecuteSkillResult;
+  ttlMs: number;
+  key: string;
+}
+
+class IdempotencyEngine {
+  private cache: Map<string, CachedIdempotencyRecord> = new Map();
+
+  public check(key: string): CachedIdempotencyRecord | null {
+    const record = this.cache.get(key);
+    if (!record) return null;
+    const now = Date.now();
+    if (now - record.timestamp > record.ttlMs) {
+      this.cache.delete(key);
+      return null;
+    }
+    return record;
+  }
+
+  public register(key: string, result: ExecuteSkillResult, ttlSeconds: number) {
+    this.cache.set(key, {
+      timestamp: Date.now(),
+      result,
+      ttlMs: ttlSeconds * 1000,
+      key
+    });
+  }
+
+  public clear() {
+    this.cache.clear();
+  }
+
+  public getKeysCount(): number {
+    return this.cache.size;
+  }
+}
+
+export const idempotencyStore = new IdempotencyEngine();
+
+// =========================================================================
+// 4. SEED DATA (RUNS, TICKETS, AUDIT LEDGER)
+// =========================================================================
 
 export const SEED_AGENT_RUNS: AgentRun[] = [
   {
     id: "run-9842",
+    executionRequestId: "req-10921",
     correlationId: "corr-84820-991",
     idempotencyKey: "deal-1:agent_underwriting:skill_calculate_mao:7fa8c3",
     dealId: "deal-1",
@@ -389,6 +474,8 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
     skillName: "Calculate Algonquian MAO Matrix",
     targetSystem: "MAO Engine",
     status: "completed",
+    attemptCount: 1,
+    maxRetries: 3,
     inputPayload: {
       arv: 420000,
       estimatedRepairs: 45000,
@@ -402,20 +489,16 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
       isProfitable: true
     },
     stateDelta: {
-      previousStatus: DealStatus.DueDiligence,
-      newStatus: DealStatus.Underwriting,
       propertyUpdates: { mao: 229000 }
     },
     traceSteps: [
-      { stepNumber: 1, stepName: "Resolve Agent & Skill", timestamp: "2026-08-26T17:58:01.010Z", status: "success", durationMs: 12, details: "Agent [agent_underwriting] authorized for skill [skill_calculate_mao]" },
-      { stepNumber: 2, stepName: "Verify Security Allowlist", timestamp: "2026-08-26T17:58:01.022Z", status: "success", durationMs: 8, details: "No permission bypass detected. Autonomous level: fully_autonomous" },
-      { stepNumber: 3, stepName: "Resolve Canonical Deal", timestamp: "2026-08-26T17:58:01.030Z", status: "success", durationMs: 15, details: "Loaded Deal: 244 Pine Street (ID: deal-1, State: Underwriting)" },
-      { stepNumber: 4, stepName: "Validate State Machine", timestamp: "2026-08-26T17:58:01.045Z", status: "success", durationMs: 6, details: "State [Underwriting] is permitted in skill allowed states." },
-      { stepNumber: 5, stepName: "Validate Input Schema", timestamp: "2026-08-26T17:58:01.051Z", status: "success", durationMs: 10, details: "All 4 required parameters valid and typed." },
-      { stepNumber: 6, stepName: "Approval Policy Evaluation", timestamp: "2026-08-26T17:58:01.061Z", status: "skipped", durationMs: 4, details: "Policy is [none]. Immediate autonomous execution allowed." },
-      { stepNumber: 7, stepName: "Compute Idempotency Record", timestamp: "2026-08-26T17:58:01.065Z", status: "success", durationMs: 14, details: "Generated key [deal-1:agent_underwriting:skill_calculate_mao:7fa8c3]. No prior collisions." },
-      { stepNumber: 8, stepName: "Execute Service Interface", timestamp: "2026-08-26T17:58:01.079Z", status: "success", durationMs: 290, details: "MAO computed successfully. Output: $229,000 MAO." },
-      { stepNumber: 9, stepName: "Commit Immutable Audit Event", timestamp: "2026-08-26T17:58:01.369Z", status: "success", durationMs: 25, details: "Audit checksum verified: #ALGQ-9842-88AF. Written to audit stream." }
+      { stepNumber: 1, stepName: "1. Skill Validation", timestamp: "2026-08-26T17:58:01.010Z", status: "success", durationMs: 12, details: "Loaded skill schema [skill_calculate_mao]. Verified 4 typed parameters." },
+      { stepNumber: 2, stepName: "2. Execution Request & Idempotency", timestamp: "2026-08-26T17:58:01.022Z", status: "success", durationMs: 14, details: "Ingested request #req-10921. Idempotency lock granted [deal-1:...:7fa8c3]. TTL: 3600s." },
+      { stepNumber: 3, stepName: "3. Authorization & Permissions", timestamp: "2026-08-26T17:58:01.036Z", status: "success", durationMs: 15, details: "Verified Agent permissions ['write:underwriting'] matches skill requirements. Deal exists in canonical CRM." },
+      { stepNumber: 4, stepName: "4. Human Approval Boundary", timestamp: "2026-08-26T17:58:01.051Z", status: "skipped", durationMs: 4, details: "Policy is [none]. Non-binding calculation. Autonomous execution permitted." },
+      { stepNumber: 5, stepName: "5. Execution & Retries", timestamp: "2026-08-26T17:58:01.055Z", status: "success", durationMs: 290, details: "Attempt 1/3 succeeded. MAO Engine calculated output in 290ms without errors." },
+      { stepNumber: 6, stepName: "6. Result & CRM State Delta", timestamp: "2026-08-26T17:58:01.345Z", status: "success", durationMs: 24, details: "MAO: $229,000. Committed state delta to canonical deal [deal-1]." },
+      { stepNumber: 7, stepName: "7. Immutable Audit Event", timestamp: "2026-08-26T17:58:01.369Z", status: "success", durationMs: 25, details: "Generated cryptographic checksum #ALGQ-AUD-9842-88AF. Written to append-only audit stream." }
     ],
     startedAt: "2026-08-26T17:58:01.010Z",
     completedAt: "2026-08-26T17:58:01.394Z",
@@ -424,6 +507,7 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
   },
   {
     id: "run-9843",
+    executionRequestId: "req-10922",
     correlationId: "corr-84820-992",
     idempotencyKey: "deal-3:agent_tasks:skill_provision_google_tasks:3cb19a",
     dealId: "deal-3",
@@ -434,6 +518,8 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
     skillName: "Provision Stage Google Task List",
     targetSystem: "Google Tasks",
     status: "completed",
+    attemptCount: 1,
+    maxRetries: 3,
     inputPayload: {
       syncDueDates: true,
       priorityLevel: "High"
@@ -449,15 +535,13 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
       ]
     },
     traceSteps: [
-      { stepNumber: 1, stepName: "Resolve Agent & Skill", timestamp: "2026-08-26T18:12:00.100Z", status: "success", durationMs: 10, details: "Agent [agent_tasks] authorized for [skill_provision_google_tasks]" },
-      { stepNumber: 2, stepName: "Verify Security Allowlist", timestamp: "2026-08-26T18:12:00.110Z", status: "success", durationMs: 5, details: "Allowlist verified." },
-      { stepNumber: 3, stepName: "Resolve Canonical Deal", timestamp: "2026-08-26T18:12:00.115Z", status: "success", durationMs: 12, details: "Loaded Deal: 105 Crown Street (ID: deal-3)" },
-      { stepNumber: 4, stepName: "Validate State Machine", timestamp: "2026-08-26T18:12:00.127Z", status: "success", durationMs: 8, details: "State [Offer Submitted] permitted." },
-      { stepNumber: 5, stepName: "Validate Input Schema", timestamp: "2026-08-26T18:12:00.135Z", status: "success", durationMs: 6, details: "Schema valid." },
-      { stepNumber: 6, stepName: "Approval Policy Evaluation", timestamp: "2026-08-26T18:12:00.141Z", status: "skipped", durationMs: 2, details: "Policy is [none]." },
-      { stepNumber: 7, stepName: "Compute Idempotency Record", timestamp: "2026-08-26T18:12:00.143Z", status: "success", durationMs: 12, details: "Idempotency registered." },
-      { stepNumber: 8, stepName: "Execute Service Interface", timestamp: "2026-08-26T18:12:00.155Z", status: "success", durationMs: 520, details: "Google Tasks checklist synchronized." },
-      { stepNumber: 9, stepName: "Commit Immutable Audit Event", timestamp: "2026-08-26T18:12:00.675Z", status: "success", durationMs: 20, details: "Audit ledger entry signed." }
+      { stepNumber: 1, stepName: "1. Skill Validation", timestamp: "2026-08-26T18:12:00.100Z", status: "success", durationMs: 10, details: "Loaded skill schema [skill_provision_google_tasks]." },
+      { stepNumber: 2, stepName: "2. Execution Request & Idempotency", timestamp: "2026-08-26T18:12:00.110Z", status: "success", durationMs: 12, details: "Ingested request #req-10922. Idempotency lock active." },
+      { stepNumber: 3, stepName: "3. Authorization & Permissions", timestamp: "2026-08-26T18:12:00.122Z", status: "success", durationMs: 14, details: "Agent authorized with scope ['sync:google_tasks']. State [Offer Submitted] permitted." },
+      { stepNumber: 4, stepName: "4. Human Approval Boundary", timestamp: "2026-08-26T18:12:00.136Z", status: "skipped", durationMs: 2, details: "Policy is [none]. Non-contractual stage automation." },
+      { stepNumber: 5, stepName: "5. Execution & Retries", timestamp: "2026-08-26T18:12:00.138Z", status: "success", durationMs: 520, details: "Attempt 1/3 succeeded. Synchronized 4 tasks into Google Tasks API." },
+      { stepNumber: 6, stepName: "6. Result & CRM State Delta", timestamp: "2026-08-26T18:12:00.658Z", status: "success", durationMs: 17, details: "Linked task list to CRM record." },
+      { stepNumber: 7, stepName: "7. Immutable Audit Event", timestamp: "2026-08-26T18:12:00.675Z", status: "success", durationMs: 20, details: "Signed audit record with hash #ALGQ-AUD-9843-4A01." }
     ],
     startedAt: "2026-08-26T18:12:00.100Z",
     completedAt: "2026-08-26T18:12:00.695Z",
@@ -466,6 +550,7 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
   },
   {
     id: "run-9844",
+    executionRequestId: "req-10923",
     correlationId: "corr-84820-993",
     idempotencyKey: "deal-2:agent_offers:skill_release_binding_offer:99d21e",
     dealId: "deal-2",
@@ -476,6 +561,8 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
     skillName: "Authorize & Release Binding Purchase Contract",
     targetSystem: "Offer Generator",
     status: "awaiting_approval",
+    attemptCount: 1,
+    maxRetries: 2,
     approvalTicketId: "ticket-101",
     inputPayload: {
       bindingPrice: 585000,
@@ -484,15 +571,13 @@ export const SEED_AGENT_RUNS: AgentRun[] = [
       includeSellerFinancing: false
     },
     traceSteps: [
-      { stepNumber: 1, stepName: "Resolve Agent & Skill", timestamp: "2026-08-26T18:15:20.001Z", status: "success", durationMs: 11, details: "Agent [agent_offers] mapped to [skill_release_binding_offer]" },
-      { stepNumber: 2, stepName: "Verify Security Allowlist", timestamp: "2026-08-26T18:15:20.012Z", status: "success", durationMs: 7, details: "Authorization verified. Supervised action level: strict_approval" },
-      { stepNumber: 3, stepName: "Resolve Canonical Deal", timestamp: "2026-08-26T18:15:20.019Z", status: "success", durationMs: 14, details: "Resolved Deal: 89 Farmington Avenue (ID: deal-2, State: DueDiligence)" },
-      { stepNumber: 4, stepName: "Validate State Machine", timestamp: "2026-08-26T18:15:20.033Z", status: "success", durationMs: 9, details: "State is valid for offer generation." },
-      { stepNumber: 5, stepName: "Validate Input Schema", timestamp: "2026-08-26T18:15:20.042Z", status: "success", durationMs: 11, details: "Parameters verified: $585k price, $10k EMD." },
-      { stepNumber: 6, stepName: "Approval Policy Evaluation", timestamp: "2026-08-26T18:15:20.053Z", status: "warning", durationMs: 45, details: "GATE TRIGGERED: Skill requires human sponsor sign-off. Created ApprovalTicket #ticket-101. Execution paused awaiting Managing Member signature." },
-      { stepNumber: 7, stepName: "Compute Idempotency Record", timestamp: "2026-08-26T18:15:20.098Z", status: "pending", durationMs: 0, details: "Hold state until approval resolution." },
-      { stepNumber: 8, stepName: "Execute Service Interface", timestamp: "2026-08-26T18:15:20.098Z", status: "pending", durationMs: 0, details: "Queued behind Approval Gate." },
-      { stepNumber: 9, stepName: "Commit Immutable Audit Event", timestamp: "2026-08-26T18:15:20.100Z", status: "success", durationMs: 18, details: "Audit recorded: [INTERCEPTED_APPROVAL] by Human Approval Gate." }
+      { stepNumber: 1, stepName: "1. Skill Validation", timestamp: "2026-08-26T18:15:20.001Z", status: "success", durationMs: 11, details: "Loaded skill schema [skill_release_binding_offer]. Verified purchase price and EMD." },
+      { stepNumber: 2, stepName: "2. Execution Request & Idempotency", timestamp: "2026-08-26T18:15:20.012Z", status: "success", durationMs: 14, details: "Ingested request #req-10923. Priority: High." },
+      { stepNumber: 3, stepName: "3. Authorization & Permissions", timestamp: "2026-08-26T18:15:20.026Z", status: "success", durationMs: 16, details: "Verified agent permission ['write:contracts']. State [Due Diligence / Negotiation] permitted." },
+      { stepNumber: 4, stepName: "4. Human Approval Boundary", timestamp: "2026-08-26T18:15:20.042Z", status: "warning", durationMs: 45, details: "BOUNDARY TRIGGERED: Legally binding purchase contract for $585,000 with $10,000 EMD requires sponsor sign-off. Created ApprovalTicket #ticket-101. Execution paused." },
+      { stepNumber: 5, stepName: "5. Execution & Retries", timestamp: "2026-08-26T18:15:20.087Z", status: "pending", durationMs: 0, details: "Held behind Sponsor Approval Gate. Waiting for Managing Member signature." },
+      { stepNumber: 6, stepName: "6. Result & CRM State Delta", timestamp: "2026-08-26T18:15:20.087Z", status: "pending", durationMs: 0, details: "Pending signature verification." },
+      { stepNumber: 7, stepName: "7. Immutable Audit Event", timestamp: "2026-08-26T18:15:20.090Z", status: "success", durationMs: 18, details: "Audit recorded: [INTERCEPTED_APPROVAL] with Ticket #ticket-101." }
     ],
     startedAt: "2026-08-26T18:15:20.001Z",
     operator: "Gregory Jones (Initiator)"
@@ -503,6 +588,7 @@ export const SEED_APPROVAL_TICKETS: ApprovalTicket[] = [
   {
     id: "ticket-101",
     runId: "run-9844",
+    executionRequestId: "req-10923",
     dealId: "deal-2",
     dealAddress: "89 Farmington Avenue, Hartford CT",
     agentId: "agent_offers",
@@ -527,6 +613,7 @@ export const SEED_APPROVAL_TICKETS: ApprovalTicket[] = [
   {
     id: "ticket-102",
     runId: "run-9830",
+    executionRequestId: "req-10915",
     dealId: "deal-1",
     dealAddress: "244 Pine Street, Waterbury CT",
     agentId: "agent_capital",
@@ -603,9 +690,9 @@ export const SEED_AUDIT_LOGS: AgentAuditEvent[] = [
   }
 ];
 
-// ==========================================
-// 4. ORCHESTRATOR EXECUTION ENGINE
-// ==========================================
+// =========================================================================
+// 5. PRODUCTION 1.0.0 ORCHESTRATOR INTERFACES & EXECUTION LOGIC
+// =========================================================================
 
 export interface ExecuteSkillRequest {
   deal: RealEstateDeal;
@@ -613,6 +700,11 @@ export interface ExecuteSkillRequest {
   skillId: string;
   inputs: Record<string, any>;
   operator?: string;
+  idempotencyKey?: string;
+  priority?: "low" | "normal" | "high" | "urgent";
+  maxRetries?: number;
+  simulateFailureMode?: "none" | "transient_timeout" | "permission_denied" | "state_violation" | "schema_error";
+  allowDuplicateReplay?: boolean;
 }
 
 export interface ExecuteSkillResult {
@@ -622,39 +714,62 @@ export interface ExecuteSkillResult {
   updatedDeal?: Partial<RealEstateDeal>;
   message: string;
   isAwaitingApproval: boolean;
+  isIdempotencyReplay?: boolean;
 }
 
+/**
+ * Executes an Agent Skill through the formal 7-Stage Core Pipeline:
+ * [1. Skills] → [2. Execution Requests] → [3. Authorization] → [4. Approval] → [5. Execution] → [6. Result] → [7. Audit Event]
+ */
 export function executeAgentSkill(
   request: ExecuteSkillRequest,
   onStageTaskEvent?: (eventName: string, details: any) => void
 ): ExecuteSkillResult {
-  const { deal, agentId, skillId, inputs, operator = "Gregory Jones (Operator)" } = request;
+  const { 
+    deal, 
+    agentId, 
+    skillId, 
+    inputs, 
+    operator = "Gregory Jones (Managing Member)",
+    idempotencyKey: userKey,
+    priority = "normal",
+    maxRetries = 3,
+    simulateFailureMode = "none",
+    allowDuplicateReplay = false
+  } = request;
+
   const startedAt = new Date().toISOString();
   const runId = `run-${Math.floor(1000 + Math.random() * 9000)}`;
+  const executionRequestId = `req-${Math.floor(10000 + Math.random() * 90000)}`;
   const correlationId = `corr-${Math.floor(10000 + Math.random() * 90000)}-${Math.floor(100 + Math.random() * 900)}`;
+  
   const idempotencyHash = Math.random().toString(36).substring(2, 8);
-  const idempotencyKey = `${deal.id}:${agentId}:${skillId}:${idempotencyHash}`;
+  const idempotencyKey = userKey || `${deal.id}:${agentId}:${skillId}:${idempotencyHash}`;
   const payloadHash = `sha256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 8)}`;
   const auditChecksum = `#ALGQ-AUD-${runId.replace("run-", "")}-${payloadHash.substring(7, 11).toUpperCase()}`;
 
+  const traceSteps: AgentRunTraceStep[] = [];
+
+  // -----------------------------------------------------------------------
+  // STAGE 1: SKILL RESOLUTION & PARAMETER VALIDATION
+  // -----------------------------------------------------------------------
   const agent = ALGQ_AGENT_REGISTRY.find(a => a.id === agentId);
   const skill = ALGQ_SKILL_REGISTRY.find(s => s.id === skillId);
 
-  const traceSteps: AgentRunTraceStep[] = [];
-
-  // Step 1: Resolve Agent & Skill
   if (!agent || !skill) {
-    const err = "Invalid agent or skill identifier.";
+    const err = "Invalid agent or skill identifier in execution request.";
     traceSteps.push({
       stepNumber: 1,
-      stepName: "Resolve Agent & Skill",
+      stepName: "1. Skill Validation",
       timestamp: new Date().toISOString(),
       status: "error",
-      durationMs: 5,
+      durationMs: 4,
       details: err
     });
+
     const failedRun: AgentRun = {
       id: runId,
+      executionRequestId,
       correlationId,
       idempotencyKey,
       dealId: deal.id,
@@ -670,9 +785,10 @@ export function executeAgentSkill(
       traceSteps,
       startedAt,
       completedAt: new Date().toISOString(),
-      durationMs: 5,
+      durationMs: 4,
       operator
     };
+
     const audit: AgentAuditEvent = {
       id: `aud-${runId}-01`,
       timestamp: new Date().toISOString(),
@@ -682,7 +798,7 @@ export function executeAgentSkill(
       agentName: failedRun.agentName,
       skillId,
       skillName: failedRun.skillName,
-      action: "EXECUTION_FAILURE",
+      action: "EXECUTION_REQUEST_REJECTED",
       status: "FAILED",
       operator,
       idempotencyKey,
@@ -690,31 +806,24 @@ export function executeAgentSkill(
       details: `Resolution failed: ${err}`,
       auditChecksum
     };
+
     return { run: failedRun, auditEvent: audit, message: err, isAwaitingApproval: false };
   }
 
-  traceSteps.push({
-    stepNumber: 1,
-    stepName: "Resolve Agent & Skill",
-    timestamp: new Date().toISOString(),
-    status: "success",
-    durationMs: 8,
-    details: `Resolved [${agent.codename}] with permission mapping to [${skill.name}]`
-  });
-
-  // Step 2: Verify Agent -> Skill Authorization
-  if (!agent.allowedSkillIds.includes(skill.id)) {
-    const err = `Security Policy Block: Agent [${agent.name}] is not allowlisted to execute skill [${skill.name}]. Cross-agent bypass prohibited.`;
+  // Schema check / simulated failure
+  if (simulateFailureMode === "schema_error") {
+    const err = "Schema Validation Error: Required parameter 'arv' is out of allowable investment boundary.";
     traceSteps.push({
-      stepNumber: 2,
-      stepName: "Verify Security Allowlist",
+      stepNumber: 1,
+      stepName: "1. Skill Validation",
       timestamp: new Date().toISOString(),
       status: "error",
-      durationMs: 12,
+      durationMs: 8,
       details: err
     });
     const failedRun: AgentRun = {
       id: runId,
+      executionRequestId,
       correlationId,
       idempotencyKey,
       dealId: deal.id,
@@ -730,7 +839,153 @@ export function executeAgentSkill(
       traceSteps,
       startedAt,
       completedAt: new Date().toISOString(),
-      durationMs: 20,
+      durationMs: 12,
+      operator
+    };
+    const audit: AgentAuditEvent = {
+      id: `aud-${runId}-01`,
+      timestamp: new Date().toISOString(),
+      dealId: deal.id,
+      dealAddress: deal.address,
+      agentId: agent.id,
+      agentName: agent.name,
+      skillId: skill.id,
+      skillName: skill.name,
+      action: "SCHEMA_VALIDATION_FAILURE",
+      status: "FAILED",
+      operator,
+      idempotencyKey,
+      payloadHash,
+      details: err,
+      auditChecksum
+    };
+    return { run: failedRun, auditEvent: audit, message: err, isAwaitingApproval: false };
+  }
+
+  traceSteps.push({
+    stepNumber: 1,
+    stepName: "1. Skill Validation",
+    timestamp: new Date().toISOString(),
+    status: "success",
+    durationMs: 8,
+    details: `Resolved [${skill.name}] with target [${skill.targetSystem}]. Schema checked with ${Object.keys(inputs).length} parameters.`
+  });
+
+  // -----------------------------------------------------------------------
+  // STAGE 2: EXECUTION REQUEST & IDEMPOTENCY LOCK
+  // -----------------------------------------------------------------------
+  const existingIdempotency = idempotencyStore.check(idempotencyKey);
+  if (existingIdempotency && !allowDuplicateReplay) {
+    traceSteps.push({
+      stepNumber: 2,
+      stepName: "2. Execution Request & Idempotency",
+      timestamp: new Date().toISOString(),
+      status: "warning",
+      durationMs: 10,
+      details: `IDEMPOTENCY LOCK HIT: Duplicate request detected for key [${idempotencyKey}]. Returning cached result without duplicate execution.`
+    });
+
+    return {
+      ...existingIdempotency.result,
+      isIdempotencyReplay: true,
+      message: `[IDEMPOTENCY HIT] Request with key ${idempotencyKey} already executed. Replayed cached execution output.`
+    };
+  }
+
+  traceSteps.push({
+    stepNumber: 2,
+    stepName: "2. Execution Request & Idempotency",
+    timestamp: new Date().toISOString(),
+    status: "success",
+    durationMs: 12,
+    details: `Ingested Execution Request #${executionRequestId}. Registered Idempotency Lock [${idempotencyKey}] with TTL of ${skill.idempotencyTtlSeconds}s. Priority: ${priority.toUpperCase()}.`
+  });
+
+  // -----------------------------------------------------------------------
+  // STAGE 3: AUTHORIZATION & PERMISSIONS CHECK
+  // -----------------------------------------------------------------------
+  // 3a. Agent status check
+  if (agent.status === "paused" || agent.status === "idle") {
+    const err = `Authorization Error: Agent [${agent.name}] is currently in [${agent.status.toUpperCase()}] state and cannot process execution requests.`;
+    traceSteps.push({
+      stepNumber: 3,
+      stepName: "3. Authorization & Permissions",
+      timestamp: new Date().toISOString(),
+      status: "error",
+      durationMs: 10,
+      details: err
+    });
+    const failedRun: AgentRun = {
+      id: runId,
+      executionRequestId,
+      correlationId,
+      idempotencyKey,
+      dealId: deal.id,
+      dealAddress: deal.address,
+      agentId: agent.id,
+      agentName: agent.name,
+      skillId: skill.id,
+      skillName: skill.name,
+      targetSystem: skill.targetSystem,
+      status: "failed",
+      inputPayload: inputs,
+      errorMessage: err,
+      traceSteps,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      durationMs: 25,
+      operator
+    };
+    const audit: AgentAuditEvent = {
+      id: `aud-${runId}-01`,
+      timestamp: new Date().toISOString(),
+      dealId: deal.id,
+      dealAddress: deal.address,
+      agentId: agent.id,
+      agentName: agent.name,
+      skillId: skill.id,
+      skillName: skill.name,
+      action: "AGENT_INACTIVE_BLOCK",
+      status: "FAILED",
+      operator,
+      idempotencyKey,
+      payloadHash,
+      details: err,
+      auditChecksum
+    };
+    return { run: failedRun, auditEvent: audit, message: err, isAwaitingApproval: false };
+  }
+
+  // 3b. Allowlist verification
+  if (!agent.allowedSkillIds.includes(skill.id)) {
+    const err = `Security Policy Block: Agent [${agent.name}] is not allowlisted to execute skill [${skill.name}]. Cross-agent bypass prohibited.`;
+    traceSteps.push({
+      stepNumber: 3,
+      stepName: "3. Authorization & Permissions",
+      timestamp: new Date().toISOString(),
+      status: "error",
+      durationMs: 12,
+      details: err
+    });
+    const failedRun: AgentRun = {
+      id: runId,
+      executionRequestId,
+      correlationId,
+      idempotencyKey,
+      dealId: deal.id,
+      dealAddress: deal.address,
+      agentId: agent.id,
+      agentName: agent.name,
+      skillId: skill.id,
+      skillName: skill.name,
+      targetSystem: skill.targetSystem,
+      status: "failed",
+      inputPayload: inputs,
+      errorMessage: err,
+      traceSteps,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      durationMs: 22,
       operator
     };
     const audit: AgentAuditEvent = {
@@ -753,41 +1008,25 @@ export function executeAgentSkill(
     return { run: failedRun, auditEvent: audit, message: err, isAwaitingApproval: false };
   }
 
-  traceSteps.push({
-    stepNumber: 2,
-    stepName: "Verify Security Allowlist",
-    timestamp: new Date().toISOString(),
-    status: "success",
-    durationMs: 6,
-    details: `Authorized skill binding. Autonomy tier: ${agent.autonomousLevel}.`
-  });
+  // 3c. Permissions Scope verification
+  const agentPerms = agent.permissions || [];
+  const requiredPerms = skill.requiredPermissions || [];
+  const hasAllPermissions = requiredPerms.every(p => agentPerms.includes(p));
 
-  // Step 3: Resolve Canonical Deal
-  traceSteps.push({
-    stepNumber: 3,
-    stepName: "Resolve Canonical Deal",
-    timestamp: new Date().toISOString(),
-    status: "success",
-    durationMs: 14,
-    details: `Loaded Deal: ${deal.address} (ID: ${deal.id}, Current State: ${deal.status})`
-  });
-
-  // Step 4: Validate State Machine Rules
-  const isAllowedState = skill.allowedDealStates.includes(deal.status);
-  const isBlockedState = skill.blockedDealStates ? skill.blockedDealStates.includes(deal.status) : false;
-
-  if (!isAllowedState || isBlockedState) {
-    const err = `State Machine Violation: Skill [${skill.name}] cannot be executed on deal in status [${deal.status}]. Permitted states: [${skill.allowedDealStates.join(", ")}].`;
+  if (!hasAllPermissions || simulateFailureMode === "permission_denied") {
+    const missing = requiredPerms.filter(p => !agentPerms.includes(p));
+    const err = `Permission Denied: Agent [${agent.name}] lacks required permission scope [${missing.join(", ") || "insufficient"}]. Requires Managing Member privilege escalation.`;
     traceSteps.push({
-      stepNumber: 4,
-      stepName: "Validate State Machine",
+      stepNumber: 3,
+      stepName: "3. Authorization & Permissions",
       timestamp: new Date().toISOString(),
       status: "error",
-      durationMs: 10,
+      durationMs: 14,
       details: err
     });
     const failedRun: AgentRun = {
       id: runId,
+      executionRequestId,
       correlationId,
       idempotencyKey,
       dealId: deal.id,
@@ -803,7 +1042,62 @@ export function executeAgentSkill(
       traceSteps,
       startedAt,
       completedAt: new Date().toISOString(),
-      durationMs: 38,
+      durationMs: 28,
+      operator
+    };
+    const audit: AgentAuditEvent = {
+      id: `aud-${runId}-01`,
+      timestamp: new Date().toISOString(),
+      dealId: deal.id,
+      dealAddress: deal.address,
+      agentId: agent.id,
+      agentName: agent.name,
+      skillId: skill.id,
+      skillName: skill.name,
+      action: "PERMISSION_DENIED_BLOCK",
+      status: "FAILED",
+      operator,
+      idempotencyKey,
+      payloadHash,
+      details: err,
+      auditChecksum
+    };
+    return { run: failedRun, auditEvent: audit, message: err, isAwaitingApproval: false };
+  }
+
+  // 3d. Deal State Machine Verification
+  const isAllowedState = skill.allowedDealStates.includes(deal.status);
+  const isBlockedState = skill.blockedDealStates ? skill.blockedDealStates.includes(deal.status) : false;
+
+  if (!isAllowedState || isBlockedState || simulateFailureMode === "state_violation") {
+    const err = `State Machine Violation: Skill [${skill.name}] cannot execute when deal is in status [${deal.status}]. Permitted states: [${skill.allowedDealStates.join(", ")}].`;
+    traceSteps.push({
+      stepNumber: 3,
+      stepName: "3. Authorization & Permissions",
+      timestamp: new Date().toISOString(),
+      status: "error",
+      durationMs: 11,
+      details: err
+    });
+    const failedRun: AgentRun = {
+      id: runId,
+      executionRequestId,
+      correlationId,
+      idempotencyKey,
+      dealId: deal.id,
+      dealAddress: deal.address,
+      agentId: agent.id,
+      agentName: agent.name,
+      skillId: skill.id,
+      skillName: skill.name,
+      targetSystem: skill.targetSystem,
+      status: "failed",
+      inputPayload: inputs,
+      errorMessage: err,
+      traceSteps,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      durationMs: 32,
       operator
     };
     const audit: AgentAuditEvent = {
@@ -827,65 +1121,61 @@ export function executeAgentSkill(
   }
 
   traceSteps.push({
-    stepNumber: 4,
-    stepName: "Validate State Machine",
+    stepNumber: 3,
+    stepName: "3. Authorization & Permissions",
     timestamp: new Date().toISOString(),
     status: "success",
-    durationMs: 8,
-    details: `State [${deal.status}] matches allowable execution states.`
+    durationMs: 14,
+    details: `Authorized. Agent permissions verified: [${agentPerms.join(", ")}]. Canonical CRM Deal verified [${deal.address}]. State [${deal.status}] matches allowlist.`
   });
 
-  // Step 5: Validate Inputs & Context Schema
-  traceSteps.push({
-    stepNumber: 5,
-    stepName: "Validate Input Schema",
-    timestamp: new Date().toISOString(),
-    status: "success",
-    durationMs: 11,
-    details: `Validated ${Object.keys(inputs).length} payload parameters against schema.`
-  });
-
-  // Step 6: Evaluate Skill-Specific Approval Policy
-  const isApprovalRequired = skill.approvalPolicy === "required" || skill.approvalPolicy === "prohibited_autonomous";
+  // -----------------------------------------------------------------------
+  // STAGE 4: HUMAN APPROVAL BOUNDARY EVALUATION
+  // -----------------------------------------------------------------------
+  const isApprovalRequired = 
+    skill.approvalPolicy === "required" || 
+    skill.approvalPolicy === "prohibited_autonomous" ||
+    skill.riskLevel === "Critical";
 
   if (isApprovalRequired) {
     const ticketId = `ticket-${Math.floor(100 + Math.random() * 900)}`;
     traceSteps.push({
-      stepNumber: 6,
-      stepName: "Approval Policy Evaluation",
+      stepNumber: 4,
+      stepName: "4. Human Approval Boundary",
       timestamp: new Date().toISOString(),
       status: "warning",
-      durationMs: 35,
-      details: `HUMAN APPROVAL GATE ENGAGED: Skill [${skill.name}] requires sovereign sponsor sign-off. Provisioned ApprovalTicket #${ticketId}. Execution paused.`
+      durationMs: 38,
+      details: `HUMAN APPROVAL GATE ENGAGED: Skill [${skill.name}] has high contractual/capital impact (${skill.riskLevel} Risk). Provisioned ApprovalTicket #${ticketId}. Execution paused awaiting Managing Member signature.`
     });
     traceSteps.push({
-      stepNumber: 7,
-      stepName: "Compute Idempotency Record",
+      stepNumber: 5,
+      stepName: "5. Execution & Retries",
       timestamp: new Date().toISOString(),
       status: "pending",
       durationMs: 0,
-      details: "Holding in queue until sponsor sign-off."
+      details: "Queued behind Approval Gate."
     });
     traceSteps.push({
-      stepNumber: 8,
-      stepName: "Execute Service Interface",
+      stepNumber: 6,
+      stepName: "6. Result & CRM State Delta",
       timestamp: new Date().toISOString(),
       status: "pending",
       durationMs: 0,
       details: "Awaiting approval resolution."
     });
     traceSteps.push({
-      stepNumber: 9,
-      stepName: "Commit Immutable Audit Event",
+      stepNumber: 7,
+      stepName: "7. Immutable Audit Event",
       timestamp: new Date().toISOString(),
       status: "success",
       durationMs: 15,
-      details: `Audit recorded: [INTERCEPTED_APPROVAL] with Ticket #${ticketId}.`
+      details: `Audit recorded: [INTERCEPTED_APPROVAL] with Ticket #${ticketId}. Checksum: ${auditChecksum}.`
     });
 
     const ticket: ApprovalTicket = {
       id: ticketId,
       runId,
+      executionRequestId,
       dealId: deal.id,
       dealAddress: deal.address,
       agentId: agent.id,
@@ -897,12 +1187,13 @@ export function executeAgentSkill(
       summary: `Authorize ${skill.name} for property at ${deal.address}`,
       proposedAction: `Execute ${skill.targetSystem} operation with payload: ${JSON.stringify(inputs)}`,
       payloadSnapshot: inputs,
-      riskEvaluation: `Consequential action. Risk Tier: ${skill.riskLevel}. Policy mandates explicit approval before contract/funds binding.`,
+      riskEvaluation: `Consequential action. Risk Tier: ${skill.riskLevel}. Policy mandates explicit approval before contract or funds binding.`,
       createdAt: new Date().toISOString()
     };
 
     const run: AgentRun = {
       id: runId,
+      executionRequestId,
       correlationId,
       idempotencyKey,
       dealId: deal.id,
@@ -914,6 +1205,8 @@ export function executeAgentSkill(
       targetSystem: skill.targetSystem,
       status: "awaiting_approval",
       approvalTicketId: ticketId,
+      attemptCount: 1,
+      maxRetries,
       inputPayload: inputs,
       traceSteps,
       startedAt,
@@ -938,30 +1231,66 @@ export function executeAgentSkill(
       auditChecksum
     };
 
-    return { run, ticket, auditEvent: audit, message: `Action intercepted by Human Approval Gate. Ticket #${ticketId} created for Managing Member review.`, isAwaitingApproval: true };
+    const result: ExecuteSkillResult = { 
+      run, 
+      ticket, 
+      auditEvent: audit, 
+      message: `Action intercepted by Human Approval Gate. Ticket #${ticketId} created for Managing Member review.`, 
+      isAwaitingApproval: true 
+    };
+
+    idempotencyStore.register(idempotencyKey, result, skill.idempotencyTtlSeconds);
+    return result;
   }
 
-  // Autonomous Flow: Step 6 bypassed
+  // Approval Policy = None
   traceSteps.push({
-    stepNumber: 6,
-    stepName: "Approval Policy Evaluation",
+    stepNumber: 4,
+    stepName: "4. Human Approval Boundary",
     timestamp: new Date().toISOString(),
     status: "skipped",
     durationMs: 4,
-    details: "Approval policy is [none]. Immediate autonomous execution proceeding."
+    details: "Approval policy is [none]. Non-contractual operation. Immediate autonomous execution approved."
   });
 
-  // Step 7: Compute Idempotency Record
-  traceSteps.push({
-    stepNumber: 7,
-    stepName: "Compute Idempotency Record",
-    timestamp: new Date().toISOString(),
-    status: "success",
-    durationMs: 10,
-    details: `Idempotency lock granted: [${idempotencyKey}]. TTL: ${skill.idempotencyTtlSeconds}s.`
-  });
+  // -----------------------------------------------------------------------
+  // STAGE 5: EXECUTION WITH RETRY CONTROLS & RECOVERY
+  // -----------------------------------------------------------------------
+  let currentAttempt = 1;
+  const retryHistory: { attempt: number; timestamp: string; error: string; backoffMs: number }[] = [];
 
-  // Step 8: Execute Service Interface
+  if (simulateFailureMode === "transient_timeout") {
+    // Simulate retry failure logic
+    retryHistory.push({
+      attempt: 1,
+      timestamp: new Date().toISOString(),
+      error: "SocketTimeoutException: Connection to downstream target system timed out after 3000ms.",
+      backoffMs: 250
+    });
+    currentAttempt = 2;
+
+    traceSteps.push({
+      stepNumber: 5,
+      stepName: "5. Execution & Retries",
+      timestamp: new Date().toISOString(),
+      status: "warning",
+      durationMs: 250,
+      details: `Attempt 1 failed with transient timeout. Initiated automated retry attempt 2/${maxRetries} with exponential backoff (250ms delay). Re-established adapter session.`
+    });
+  } else {
+    traceSteps.push({
+      stepNumber: 5,
+      stepName: "5. Execution & Retries",
+      timestamp: new Date().toISOString(),
+      status: "success",
+      durationMs: skill.estimatedRunTimeMs,
+      details: `Attempt 1/${maxRetries} succeeded. Target adapter [${skill.targetSystem}] responded within ${skill.estimatedRunTimeMs}ms with 200 OK.`
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // STAGE 6: RESULT COMPILATION & CANONICAL CRM STATE DELTA
+  // -----------------------------------------------------------------------
   const updatedDeal: Partial<RealEstateDeal> = {};
   let outputResult: Record<string, any> = {};
 
@@ -981,14 +1310,21 @@ export function executeAgentSkill(
       arv,
       estimatedRepairs: repairs,
       wholesaleFee: wholesale,
-      spread: arv - calculatedMao - repairs
+      spread: arv - calculatedMao - repairs,
+      formula: `(${arv.toLocaleString()} * ${rule * 100}%) - ${repairs.toLocaleString()} - ${wholesale.toLocaleString()} = $${calculatedMao.toLocaleString()}`
     };
   } else if (skill.id === "skill_provision_google_tasks") {
     updatedDeal.hasLinkedGoogleTaskList = true;
     outputResult = {
       taskListTitle: `${deal.status}: ${deal.address}`,
       tasksCreated: 4,
-      syncedAt: new Date().toISOString()
+      syncedAt: new Date().toISOString(),
+      milestones: [
+        "Comprehensive property due diligence inspection",
+        "Title search & municipal municipal lien search",
+        "Capital partner term sheet matching",
+        "Standardized Purchase Contract assembly"
+      ]
     };
     if (onStageTaskEvent) {
       onStageTaskEvent("ON_STAGE_TASK_LIST_CREATED", {
@@ -1005,7 +1341,8 @@ export function executeAgentSkill(
       documentType: "Non-Binding LOI Purchase Draft",
       inspectionDays: inputs.inspectionDays || 14,
       closingDays: inputs.closingDays || 30,
-      generatedFile: `LOI-${deal.address.replace(/\s+/g, "_")}.pdf`
+      generatedFile: `LOI-${deal.address.replace(/\s+/g, "_")}.pdf`,
+      downloadReady: true
     };
   } else if (skill.id === "skill_match_capital") {
     outputResult = {
@@ -1013,40 +1350,45 @@ export function executeAgentSkill(
         { name: "Patriot Commercial Capital", maxCapacity: 1000000, targetYield: "10.5%", fitScore: "98%" },
         { name: "Charter Oak Private Lending", maxCapacity: 500000, targetYield: "9.0%", fitScore: "92%" }
       ],
-      blendedInterestRate: "9.75%"
+      blendedInterestRate: "9.75%",
+      capitalRequired: Number(inputs.requiredCapital) || 250000
     };
   } else {
     outputResult = {
       executed: true,
       timestamp: new Date().toISOString(),
-      parameters: inputs
+      parameters: inputs,
+      status: "ACKNOWLEDGED"
     };
   }
 
   traceSteps.push({
-    stepNumber: 8,
-    stepName: "Execute Service Interface",
+    stepNumber: 6,
+    stepName: "6. Result & CRM State Delta",
     timestamp: new Date().toISOString(),
     status: "success",
-    durationMs: skill.estimatedRunTimeMs,
-    details: `Executed [${skill.targetSystem}] service adapter successfully. Output payload compiled.`
+    durationMs: 22,
+    details: `Compiled structured output payload. Generated delta updates for canonical deal [${deal.id}]: ${JSON.stringify(updatedDeal)}.`
   });
 
-  // Step 9: Commit Immutable Audit Event
+  // -----------------------------------------------------------------------
+  // STAGE 7: COMMIT IMMUTABLE AUDIT EVENT
+  // -----------------------------------------------------------------------
   traceSteps.push({
-    stepNumber: 9,
-    stepName: "Commit Immutable Audit Event",
+    stepNumber: 7,
+    stepName: "7. Immutable Audit Event",
     timestamp: new Date().toISOString(),
     status: "success",
-    durationMs: 16,
-    details: `Cryptographic audit checksum verified: ${auditChecksum}. Recorded to append-only stream.`
+    durationMs: 18,
+    details: `Cryptographic audit checksum verified: ${auditChecksum}. Recorded to append-only algq_agent_audit_log.`
   });
 
   const completedAt = new Date().toISOString();
-  const durationMs = 8 + 6 + 14 + 8 + 11 + 4 + 10 + skill.estimatedRunTimeMs + 16;
+  const durationMs = 8 + 12 + 14 + 4 + skill.estimatedRunTimeMs + 22 + 18;
 
   const run: AgentRun = {
     id: runId,
+    executionRequestId,
     correlationId,
     idempotencyKey,
     dealId: deal.id,
@@ -1057,6 +1399,9 @@ export function executeAgentSkill(
     skillName: skill.name,
     targetSystem: skill.targetSystem,
     status: "completed",
+    attemptCount: currentAttempt,
+    maxRetries,
+    retryHistory: retryHistory.length > 0 ? retryHistory : undefined,
     inputPayload: inputs,
     outputResult,
     stateDelta: Object.keys(updatedDeal).length > 0 ? {
@@ -1083,15 +1428,65 @@ export function executeAgentSkill(
     operator,
     idempotencyKey,
     payloadHash,
-    details: `Successfully executed skill [${skill.name}] on deal ${deal.address}.`,
+    details: `Successfully executed [${skill.name}] across ARE Platform Service Interface.`,
     auditChecksum
   };
 
-  return {
+  const finalResult: ExecuteSkillResult = {
     run,
     auditEvent: audit,
     updatedDeal,
-    message: `Skill "${skill.name}" executed successfully across ARE Platform Service Interface.`,
+    message: `Skill "${skill.name}" executed successfully across 7-stage production pipeline.`,
     isAwaitingApproval: false
   };
+
+  // Register in Idempotency Engine
+  idempotencyStore.register(idempotencyKey, finalResult, skill.idempotencyTtlSeconds);
+
+  return finalResult;
+}
+
+/**
+ * Retries a failed or retrying agent run with incremented attempt counter.
+ */
+export function retryAgentRun(
+  run: AgentRun,
+  operator: string = "Gregory Jones (Operator)",
+  deals: RealEstateDeal[]
+): ExecuteSkillResult {
+  const matchedDeal = deals.find(d => d.id === run.dealId);
+  const deal: RealEstateDeal = matchedDeal || (deals.length > 0 ? deals[0] : {
+    id: run.dealId,
+    address: run.dealAddress,
+    city: "Chicago",
+    state: "IL",
+    zipCode: "60601",
+    status: DealStatus.Intake,
+    askingPrice: 250000,
+    arv: 400000,
+    estimatedRepairs: 40000,
+    wholesaleFee: 20000,
+    mao: 220000,
+    propertyType: "Single Family",
+    ownerName: "Canonical Property Owner",
+    ownerPhone: "(555) 019-2834",
+    ownerEmail: "owner@canonicalproperties.com",
+    occupancy: "Vacant",
+    hasSellerFinancing: false,
+    notes: "Canonical fallback deal record notes.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  return executeAgentSkill({
+    deal,
+    agentId: run.agentId,
+    skillId: run.skillId,
+    inputs: run.inputPayload,
+    operator,
+    idempotencyKey: `${run.idempotencyKey}:retry-${Date.now()}`,
+    allowDuplicateReplay: true,
+    maxRetries: run.maxRetries || 3,
+    priority: "urgent"
+  });
 }
