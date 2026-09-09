@@ -25,7 +25,23 @@ All surfaces use the same integration boundary:
 - primary API: `https://api.algonquianrealestate.com/v1`
 - WordPress fallback bridge: `https://algonquianrealestate.com/wp-json/algq/v1`
 
-The WordPress bridge should inject session-safe runtime configuration through `window.ARE_AGENT_ENGINE_CONFIG`. Private service credentials must never be embedded in the browser bundle.
+The WordPress bridge injects session-safe runtime configuration through `window.ARE_AGENT_ENGINE_CONFIG`. Private service credentials must never be embedded in the browser bundle.
+
+## WordPress integration package
+
+`wordpress/algq-agent-engine-bridge/` is the companion runtime bridge for the existing **Algonquian ARE Agent Engine** WordPress plugin. It provides:
+
+- authenticated Agent Engine snapshot access;
+- Platform Service Interface calls;
+- AgentRun dispatch into the WordPress orchestrator;
+- human approval resolution;
+- platform event publication;
+- health reporting;
+- the `[algq_agent_engine_app]` website application surface;
+- a Connected App admin surface;
+- trusted runtime configuration and invalidation messaging.
+
+The CI workflow lints the PHP integration and packages `algq-agent-engine-bridge-0.2.0.zip` as a workflow artifact.
 
 ## Canonical system boundaries
 
