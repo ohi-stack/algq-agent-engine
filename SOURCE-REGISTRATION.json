@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "registered_at": "2026-09-09",
+  "system": "Algonquian ARE Agent Engine",
+  "organization": "Algonquian Real Estate, LLC",
+  "repository": "ohi-stack/algq-agent-engine",
+  "repository_role": "runtime_control_plane_source",
+  "package_metadata": {
+    "name_observed": "react-example",
+    "version_observed": "0.0.0"
+  },
+  "live_wordpress_adapter": {
+    "plugin_name": "Algonquian ARE Agent Engine",
+    "version_observed": "0.1.0",
+    "observed_at": "2026-09-09",
+    "source_recovered": false,
+    "equivalent_to_this_repository": false
+  },
+  "authority": {
+    "owns": [
+      "agent definitions",
+      "skill definitions",
+      "approval-policy evaluation",
+      "agent runs",
+      "approval tickets",
+      "run traces",
+      "orchestration audit events"
+    ],
+    "canonical_deal_owner": "Algonquian Pipeline CRM",
+    "cross_plugin_dispatch": "ARE_Platform_Service_Interface",
+    "direct_cross_plugin_database_writes_allowed": false
+  },
+  "implementation_observed": {
+    "agent_count": 7,
+    "target_operating_role_count": 14,
+    "status": "prototype_runtime_source_not_full_target_roster"
+  },
+  "production_controls": {
+    "human_final_authority": true,
+    "approval_required_for": [
+      "binding offers",
+      "contracts and signatures",
+      "legal decisions",
+      "acquisition or disposition approval",
+      "capital commitments",
+      "funds movement or release",
+      "transaction approval",
+      "closing"
+    ],
+    "seed_data_is_production_evidence": false
+  }
+}
