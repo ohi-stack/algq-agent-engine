@@ -1,6 +1,11 @@
 {
-  "name": "Algonquian Real Estate",
-  "description": "Enterprise software portfolio and management platform for Algonquian Real Estate LLC, featuring proprietary ARE Tech applications: Algonquian ARE Agent Engine, Deal Intake, Pipeline CRM with batch CSV/JSON lead ingestion, MAO Engine, Offer Generator, Funding Tracker, Buyer Portal, and Admin Command Center.",
+  "name": "Algonquian ARE Agent Engine",
+  "description": "Algonquian Real Estate's orchestration and agent-control application. The same Agent Engine runtime connects to the canonical ARE API, the AlgonquianRealEstate.com WordPress platform, and the WordPress Agent Engine/Admin surface without duplicating authoritative Deal, underwriting, offer, document, buyer, funding, or transaction records.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API",
+    "ARE_PLATFORM_SERVICE_INTERFACE",
+    "ARE_WORDPRESS_PLUGIN_BRIDGE",
+    "ARE_CROSS_SURFACE_SYNC"
+  ]
 }

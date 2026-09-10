@@ -1,0 +1,55 @@
+name: Agent Engine CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build Agent Engine app
+        env:
+          VITE_ARE_SYNC_MODE: offline
+        run: bun run build
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Lint WordPress integration
+        run: find wordpress -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Package WordPress bridge
+        run: |
+          mkdir -p artifacts
+          cd wordpress
+          zip -rq ../artifacts/algq-agent-engine-bridge-0.2.0.zip algq-agent-engine-bridge
+
+      - name: Upload WordPress bridge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: algq-agent-engine-bridge-0.2.0
+          path: artifacts/algq-agent-engine-bridge-0.2.0.zip
+          if-no-files-found: error

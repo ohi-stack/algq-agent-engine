@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0",
+  "application": {
+    "id": "algq-agent-engine",
+    "name": "Algonquian ARE Agent Engine",
+    "version": "0.2.0",
+    "owner": "Algonquian Real Estate, LLC",
+    "division": "Algonquian Real Estate Technology Division"
+  },
+  "runtimeSurfaces": [
+    "agent_app",
+    "website",
+    "wordpress_admin"
+  ],
+  "canonicalEndpoints": {
+    "api": "https://api.algonquianrealestate.com/v1",
+    "wordpressRest": "https://algonquianrealestate.com/wp-json/algq/v1"
+  },
+  "routes": {
+    "snapshot": "/agent-engine/snapshot",
+    "serviceCall": "/services/call",
+    "agentRuns": "/agents/runs",
+    "approvals": "/approvals/{ticket_id}/resolve",
+    "events": "/events",
+    "health": "/health"
+  },
+  "authoritativeOwners": {
+    "intake": "Algonquian Deal Intake",
+    "deal": "Algonquian Pipeline CRM",
+    "underwriting": "Algonquian MAO Engine",
+    "offers": "Algonquian Offer Generator",
+    "documents": "Algonquian Document Library / PDF & Signature Engine",
+    "automation": "Algonquian Automation Engine",
+    "buyers": "Algonquian Buyer Portal / Deal Marketplace",
+    "funding": "Algonquian Funding Tracker",
+    "executiveOversight": "Algonquian Admin Command Center"
+  },
+  "humanApprovalRequiredFor": [
+    "binding_offers",
+    "contract_execution",
+    "material_negotiated_commitments",
+    "capital_commitments",
+    "funds_movement",
+    "closing_signatures",
+    "final_acquisition_or_disposition_decisions"
+  ]
+}
